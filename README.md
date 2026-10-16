@@ -36,21 +36,41 @@ Actions → Build APK → 跑完在 Artifacts 里下载 dsh-pet-debug.apk
    - **三连击** → 打开设置页
    - **按住拖** → 随便挪，松手自动记住位置
 
-## 方案 B：本地编译（不想碰 GitHub 时）
+## 方案 B：本地编译（**不需要任何账号**）
 
-需要一台电脑（Windows / macOS / Linux 都行）+ JDK 17。
+只要电脑有 **JDK 17**，剩下全交给脚本。
 
-### 1. 装 Android 命令行工具（约 150 MB）
+### 1. 装 JDK 17
 
-下载：https://developer.android.com/studio#command-tools
-
-解压到比如 `C:\android-sdk`，让它长这样：
-
-```
-C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat
+```powershell
+winget install Microsoft.OpenJDK.17
 ```
 
-### 2. 装 SDK 组件
+装完**关掉再重开** PowerShell（让 PATH 生效），验证：
+
+```powershell
+java -version        # 要显示 17.x
+```
+
+### 2. 装 Android 命令行工具（约 150 MB）
+
+1. 打开 https://developer.android.com/studio#command-tools
+2. 下载 **Windows** 版（`commandlinetools-win-*.zip`）
+3. 解压到 `C:\android-sdk`，**并调整成这个结构**：
+
+```
+C:\android-sdk\
+└── cmdline-tools\
+    └── latest\          ← 这层如果没有，要自己新建
+        ├── bin\
+        │   └── sdkmanager.bat
+        └── lib\
+```
+
+> ⚠️ 这是最容易卡住的一步：解压出来常常是 `cmdline-tools\bin\...`，
+> 必须**手动加一层 `latest`**，否则 sdkmanager 会报 "Could not determine SDK root"。
+
+### 3. 装 SDK 组件
 
 ```powershell
 $env:ANDROID_HOME = "C:\android-sdk"
@@ -58,25 +78,42 @@ cd C:\android-sdk
 .\cmdline-tools\latest\bin\sdkmanager.bat "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 ```
 
-### 3. 装 Gradle
+中途会问是否接受许可，一路输入 `y` 回车。
+
+### 4. 一键编译
+
+把项目解压到任意目录，在该目录打开 PowerShell，执行：
 
 ```powershell
-winget install Gradle.Gradle
+powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-### 4. 编译
+脚本会自动做完这些：
 
-在**项目根目录**（有 `settings.gradle.kts` 的那一层）：
-
-```powershell
-gradle assembleDebug
+```
+检查 JDK → 自动定位 ANDROID_HOME → 缺 SDK 组件就补装
+        → 写 local.properties → gradlew.bat assembleDebug
 ```
 
-产物：`app\build\outputs\apk\debug\app-debug.apk`
+> 项目自带 Gradle wrapper（`gradlew.bat` + `gradle-wrapper.jar`），
+> **所以不用另外装 Gradle**。首次运行会自动下 Gradle 8.7 和依赖，约 300 MB。
 
-### 5. 装到手机
+### 5. 产物
 
-数据线拷过去，或者微信发给自己，点开安装（需要允许「安装未知来源应用」）。
+```
+app\build\outputs\apk\debug\app-debug.apk
+```
+
+拷到手机安装（要允许「安装未知来源应用」）。
+
+### 出错了就把报错截图发我
+
+常见两个坑先列在这：
+
+| 报错 | 原因 | 解决 |
+|---|---|---|
+| `Could not determine SDK root` | `cmdline-tools` 目录结构不对 | 补上 `latest` 那一层 |
+| `SDK location not found` | 没设 `ANDROID_HOME` | 重开 PowerShell 后先执行 `$env:ANDROID_HOME="C:\android-sdk"` |
 
 ## 目录结构
 
