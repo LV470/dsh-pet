@@ -82,9 +82,28 @@
       layout();
       window.addEventListener('resize', layout);
       say('🐋 我在这儿~', 2200);
+      setTimeout(function () { react(false); }, 900);
     }).catch(function (e) {
       say('模型加载失败：' + e);
     });
+  }
+
+  // ---------------- 活人感：动作 & 表情 ----------------
+  var MOTIONS = ['喷水', '开盖', '番茄酱', '自拍', '自拍简单', 'chuipaopao', 'aidale'];
+  var HAPPY = ['开心兴奋', '星星眼', 'love', '爱心', '吐舌'];
+
+  function react(force) {
+    if (!model) return;
+    try {
+      var m = MOTIONS[Math.floor(Math.random() * MOTIONS.length)];
+      model.motion(m);
+    } catch (e) { /* 动作名对不上就跳过 */ }
+    if (force || Math.random() < 0.5) {
+      try {
+        var ex = HAPPY[Math.floor(Math.random() * HAPPY.length)];
+        model.expression(ex);
+      } catch (e) { /* 同上 */ }
+    }
   }
 
   // ---------------- 余额 ----------------
@@ -130,6 +149,7 @@
           say(pick(LINES));
         }
       } else {
+        react(Math.random() < 0.3);
         refreshBalance(false);
       }
     }, 280);
@@ -142,6 +162,12 @@
   boot();
   setTimeout(function () { refreshBalance(true); }, 1800);
   setInterval(function () { refreshBalance(true); }, 300000);
+
+  // 没人理她的时候，自己也动一动
+  (function idleLoop() {
+    var wait = 20000 + Math.random() * 20000;
+    setTimeout(function () { react(false); idleLoop(); }, wait);
+  })();
 })();
 </script>
 </body>
