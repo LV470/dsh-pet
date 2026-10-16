@@ -24,6 +24,7 @@
 <body>
 <div id="stage"></div>
 <div id="bubble"></div>
+<script src="expressions.js"></script>
 <script src="vendor/pixi.min.js"></script>
 <script src="vendor/live2dcubismcore.min.js"></script>
 <script src="vendor/cubism4.min.js"></script>
@@ -79,6 +80,11 @@
     PIXI.live2d.Live2DModel.from('model/c_0120.model3.json').then(function (m) {
       model = m;
       app.stage.addChild(model);
+      // 取 coreModel 并挂 rig（与插件作者同一挂载点）
+      try {
+        coreModel = model.internalModel.coreModel;
+        model.internalModel.on('beforeModelUpdate', applyRig);
+      } catch (e) { /* 挂不上就只播动作，其余功能不受影响 */ }
       layout();
       window.addEventListener('resize', layout);
       say('🐋 我在这儿~', 2200);
@@ -93,12 +99,62 @@
   //   喷水=splash / 开盖=openLid / 番茄酱=ketchup / 自拍=selfie / 自拍简单=selfieQuick
   var MOTIONS = ['splash', 'openLid', 'ketchup', 'selfie', 'selfieQuick', 'bubble', 'aidale'];
 
-  // 表情这一版做不了：模型的 44 个「表情」没在 model3.json 里注册，
-  // 本质是一批 Add 混合的参数开关，要自己写 rig 挂到 beforeModelUpdate 上（留 v2）
+  // ---- 表情 rig ----
+  // 这 44 个「表情」没在 model3.json 里注册，是 VTube Studio 的参数开关（多为 Add 混合）。
+  // 关键：pixi-live2d-display 每帧会 saveParameters() 存快照、结尾再 loadParameters() 装回来，
+  // 所以直接写参数会被覆盖 —— 必须挂在 beforeModelUpdate（coreModel.update() 之前最后一站）。
+  var EXPR = window.EXPR || {};
+  var FACE = [], PROPS = [];
+  (function () {
+    for (var k in EXPR) {
+      var allParam = true;
+      for (var i = 0; i < EXPR[k].length; i++) {
+        if (!/^Param/.test(EXPR[k][i][0])) { allParam = false; break; }
+      }
+      (allParam ? FACE : PROPS).push(k);
+    }
+  })();
+
+  var coreModel = null;
+  var curExpr = null, exprW = 0, exprTarget = 0, lastT = 0, exprTimer = null;
+
+  function setExpression(name, ms) {
+    if (!coreModel || !EXPR[name]) return;
+    curExpr = EXPR[name];
+    exprTarget = 1;
+    clearTimeout(exprTimer);
+    exprTimer = setTimeout(function () { exprTarget = 0; }, ms || 4000);
+  }
+
+  function applyRig() {
+    if (!coreModel || !curExpr) return;
+    var now = performance.now();
+    var dt = Math.min(64, now - (lastT || now)) / 1000;
+    lastT = now;
+
+    var speed = exprTarget > exprW ? 7 : 11;   // 进得慢退得快，像变脸不像硬切
+    exprW += (exprTarget - exprW) * Math.min(1, dt * speed);
+    if (exprTarget === 0 && exprW < 0.02) { curExpr = null; exprW = 0; return; }
+
+    for (var i = 0; i < curExpr.length; i++) {
+      var id = curExpr[i][0], val = curExpr[i][1], blend = curExpr[i][2];
+      try {
+        var idx = coreModel.getParameterIndex(id);
+        if (idx < 0) continue;                  // 模型没这个参数，跳过
+        var base = coreModel.getParameterValueByIndex(idx);
+        var out = (blend === 'Add') ? (base + val * exprW)
+                                    : (base * (1 - exprW) + val * exprW);
+        coreModel.setParameterValueByIndex(idx, out);
+      } catch (e) { /* 单个参数失败不影响其它 */ }
+    }
+  }
+
   function react() {
     if (!model) return;
     var m = MOTIONS[Math.floor(Math.random() * MOTIONS.length)];
     try { model.motion(m); } catch (e) { /* 名字对不上就跳过 */ }
+    var pool = FACE.length ? FACE : PROPS;
+    if (pool.length) setExpression(pool[Math.floor(Math.random() * pool.length)], 4000);
   }
 
   // ---------------- 余额 ----------------
