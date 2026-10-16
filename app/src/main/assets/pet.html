@@ -110,7 +110,7 @@
     say('💰 余额 ¥' + total + '\n赠送 ¥' + grant + ' · 充值 ¥' + top, 6000);
   }
 
-  // 单击=查余额 / 双击=说话 / 三连击=打开设置
+  // 单击=查余额 / 双击=打开 DSH 对话 / 三连击=打开设置
   var clicks = 0, clickTimer = null;
   window.onPetClick = function () {
     clicks++;
@@ -123,7 +123,12 @@
           DshPet.openSettings();
         }
       } else if (n === 2) {
-        say(pick(LINES));
+        if (typeof DshPet !== 'undefined' && DshPet.openChat) {
+          say('打开 DSH…', 1200);
+          DshPet.openChat();
+        } else {
+          say(pick(LINES));
+        }
       } else {
         refreshBalance(false);
       }

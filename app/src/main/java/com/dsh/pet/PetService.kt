@@ -198,6 +198,26 @@ class PetService : Service() {
             }
         }
 
+        /** 快捷对话：跳到 DSH 主界面 */
+        @JavascriptInterface
+        fun openChat() {
+            handler.post {
+                try {
+                    val i = packageManager.getLaunchIntentForPackage("com.deepseek.harness")
+                    if (i != null) {
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(i)
+                    } else {
+                        android.widget.Toast.makeText(this@PetService,
+                            "没找到 DSH 应用", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(this@PetService,
+                        "打不开 DSH", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         /** 打开主界面（用于配置 Key） */
         @JavascriptInterface
         fun openSettings() {
