@@ -36,6 +36,48 @@ Actions → Build APK → 跑完在 Artifacts 里下载 dsh-pet-debug.apk
    - **三连击** → 打开设置页
    - **按住拖** → 随便挪，松手自动记住位置
 
+## 方案 B：本地编译（不想碰 GitHub 时）
+
+需要一台电脑（Windows / macOS / Linux 都行）+ JDK 17。
+
+### 1. 装 Android 命令行工具（约 150 MB）
+
+下载：https://developer.android.com/studio#command-tools
+
+解压到比如 `C:\android-sdk`，让它长这样：
+
+```
+C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat
+```
+
+### 2. 装 SDK 组件
+
+```powershell
+$env:ANDROID_HOME = "C:\android-sdk"
+cd C:\android-sdk
+.\cmdline-tools\latest\bin\sdkmanager.bat "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+```
+
+### 3. 装 Gradle
+
+```powershell
+winget install Gradle.Gradle
+```
+
+### 4. 编译
+
+在**项目根目录**（有 `settings.gradle.kts` 的那一层）：
+
+```powershell
+gradle assembleDebug
+```
+
+产物：`app\build\outputs\apk\debug\app-debug.apk`
+
+### 5. 装到手机
+
+数据线拷过去，或者微信发给自己，点开安装（需要允许「安装未知来源应用」）。
+
 ## 目录结构
 
 ```
