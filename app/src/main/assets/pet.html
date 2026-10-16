@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DSH Pet</title>
+<style>
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+            background:transparent;touch-action:none;
+            -webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
+  #stage{position:absolute;inset:0;}
+  #bubble{position:absolute;left:6px;right:6px;bottom:6px;
+          background:rgba(16,20,28,.88);color:#e9eefb;
+          font:13px/1.45 sans-serif;
+          padding:8px 11px;border-radius:12px;
+          border:1px solid rgba(110,160,255,.35);
+          box-shadow:0 4px 18px rgba(0,0,0,.35);
+          opacity:0;transform:translateY(6px);
+          transition:opacity .22s ease,transform .22s ease;
+          pointer-events:none;white-space:pre-wrap;word-break:break-word;}
+  #bubble.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="bubble"></div>
+<script src="vendor/pixi.min.js"></script>
+<script src="vendor/live2dcubismcore.min.js"></script>
+<script src="vendor/cubism4.min.js"></script>
+<script>
+(function () {
+  var bubble = document.getElementById('bubble');
+  var hideTimer = null;
+
+  function say(text, ms) {
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { bubble.classList.remove('show'); }, ms || 3500);
+  }
+
+  var LINES = [
+    '嗯？戳我干嘛~',
+    '在的在的 🐋',
+    '今天也辛苦了',
+    '别熬夜，早点睡哦',
+    '要我帮你查余额吗？',
+    '有活儿随时喊我',
+    '拖着我，我跟你走'
+  ];
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  // ---------------- Live2D ----------------
+  var app = null, model = null;
+
+  function layout() {
+    if (!app || !model) return;
+    var w = app.renderer.width, h = app.renderer.height;
+    var s = Math.min(w / model.width, h / model.height);
+    model.scale.set(s);
+    model.x = (w - model.width * s) / 2;
+    model.y = h - model.height * s;
+  }
+
+  function boot() {
+    if (typeof PIXI === 'undefined' || !PIXI.live2d) {
+      say('渲染库没加载起来');
+      return;
+    }
+    app = new PIXI.Application({
+      backgroundAlpha: 0,
+      antialias: true,
+      autoStart: true,
+      resizeTo: window,
+      resolution: window.devicePixelRatio || 1
+    });
+    document.getElementById('stage').appendChild(app.view);
+
+    PIXI.live2d.Live2DModel.from('model/c_0120.model3.json').then(function (m) {
+      model = m;
+      app.stage.addChild(model);
+      layout();
+      window.addEventListener('resize', layout);
+      say('🐋 我在这儿~', 2200);
+    }).catch(function (e) {
+      say('模型加载失败：' + e);
+    });
+  }
+
+  // ---------------- 余额 ----------------
+  function refreshBalance(silentWhenOk) {
+    if (typeof DshPet === 'undefined') { say('没连上 App'); return; }
+    var raw;
+    try { raw = DshPet.balance(); }
+    catch (e) { say('调用失败：' + e); return; }
+
+    var d;
+    try { d = JSON.parse(raw); }
+    catch (e) { say('返回异常：' + raw); return; }
+
+    if (d.error) {
+      if (d.error === 'no_key') say('还没填 DeepSeek API Key\n点我 → 打开设置', 5000);
+      else say('余额查询失败（' + d.error + '）', 4000);
+      return;
+    }
+    var b = (d.balance_infos || [])[0] || {};
+    var total = parseFloat(b.total_balance || 0).toFixed(2);
+    var grant = parseFloat(b.granted_balance || 0).toFixed(2);
+    var top = parseFloat(b.topped_up_balance || 0).toFixed(2);
+    say('💰 余额 ¥' + total + '\n赠送 ¥' + grant + ' · 充值 ¥' + top, 6000);
+  }
+
+  // 单击=查余额 / 双击=说话 / 三连击=打开设置
+  var clicks = 0, clickTimer = null;
+  window.onPetClick = function () {
+    clicks++;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(function () {
+      var n = clicks; clicks = 0;
+      if (n >= 3) {
+        if (typeof DshPet !== 'undefined' && DshPet.openSettings) {
+          say('打开设置…', 1500);
+          DshPet.openSettings();
+        }
+      } else if (n === 2) {
+        say(pick(LINES));
+      } else {
+        refreshBalance(false);
+      }
+    }, 280);
+  };
+
+  // 调试用
+  window.refreshBalance = refreshBalance;
+  window.say = say;
+
+  boot();
+  setTimeout(function () { refreshBalance(true); }, 1800);
+  setInterval(function () { refreshBalance(true); }, 300000);
+})();
+</script>
+</body>
+</html>

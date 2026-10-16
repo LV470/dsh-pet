@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DSH 桌宠</string>
+    <string name="perm_need_overlay">需要授予「悬浮窗」权限</string>
+    <string name="btn_start">启动桌宠</string>
+    <string name="btn_stop">停止桌宠</string>
+    <string name="notif_channel">桌宠常驻</string>
+    <string name="notif_title">鲸鱼娘在你屏幕上 🐋</string>
+    <string name="notif_text">点一下她可以聊天 · 长按可拖动</string>
+</resources>
