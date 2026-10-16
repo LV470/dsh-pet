@@ -35,3 +35,13 @@ jobs:
           name: dsh-pet-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            **/build/reports/**
+            **/build/outputs/logs/**
+          if-no-files-found: ignore

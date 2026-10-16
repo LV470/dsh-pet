@@ -28,13 +28,21 @@ android {
         jvmTarget = "17"
     }
     packaging {
-        resources.excludes += setOf("META-INF/*")
+        // 只排掉真正会撞车的元数据，别用 META-INF/* 一刀切
+        // （那会连 kotlin_module、依赖的服务文件一起删掉）
+        resources.excludes += setOf(
+            "META-INF/DEPENDENCIES",
+            "META-INF/LICENSE",
+            "META-INF/LICENSE.txt",
+            "META-INF/NOTICE",
+            "META-INF/NOTICE.txt",
+            "META-INF/*.kotlin_module"
+        )
     }
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
+    // 只用 appcompat：网络走 HttpURLConnection，异步走 Handler，
+    // 少一个依赖就少一分首次构建失败的可能
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
