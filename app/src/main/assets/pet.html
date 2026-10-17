@@ -15,15 +15,15 @@
   /* 调试标记已移除 */
   /* ---------- 点击菜单 ---------- */
   #menu{position:absolute;left:0;right:0;bottom:0;top:0;display:none;
-        flex-direction:column;justify-content:flex-end;padding:8px;
+        flex-direction:column;justify-content:flex-end;padding:5px;
         box-sizing:border-box;background:transparent;z-index:20;
-        font:12px/1.5 sans-serif;color:#e9eefb;pointer-events:none;}
+        font:11px/1.4 sans-serif;color:#e9eefb;pointer-events:none;}
   #menu.show{display:flex;}
   #menu .panel{pointer-events:auto;
-        background:rgba(12,16,24,.88);border-radius:10px;padding:5px;
+        background:rgba(12,16,24,.82);border-radius:10px;padding:5px;
         border:1px solid rgba(110,160,255,.4);
         box-shadow:0 6px 24px rgba(0,0,0,.45);
-        max-height:100%;box-sizing:border-box;overflow-y:auto;
+        max-height:62%;box-sizing:border-box;overflow-y:auto;
         -webkit-overflow-scrolling:touch;}
   #menu .row{margin:2px 0;display:flex;align-items:center;gap:4px;}
   #menu .row label{width:30px;flex:none;color:#9fb6dd;font-size:11px;}
@@ -323,13 +323,7 @@
   var alphaV = document.getElementById('alphaV');
 
   function openMenu() {
-    // 先把窗口临时放大，否则 240x240 装不下整套菜单
-    try {
-      var c0 = JSON.parse(DshPet.getConfig());
-      savedW = c0.w; savedH = c0.h;
-      if (c0.w < 300) DshPet.setSize(300, 400);
-    } catch (e) {}
-
+    // 不再临时放大窗口：那会把用户调好的尺寸也一起改掉
     menuEl.classList.add('show');
     chatEl.classList.remove('show');
     try { DshPet.setMenuOpen(true); } catch (e) {}
@@ -347,8 +341,7 @@
     menuEl.classList.remove('show');
     if (typeof DshPet !== 'undefined' && DshPet.setFocusable) DshPet.setFocusable(false);
     try { DshPet.setMenuOpen(false); } catch (e) {}
-    // 恢复菜单打开前的尺寸
-    if (savedW > 0) { try { DshPet.setSize(savedW, savedH); } catch (e) {} savedW = 0; }
+    // 不恢复尺寸：用户拖成多大就是多大
   }
 
   // 拖动滑块：实时改大小；松手时再存一次（确保落盘）
