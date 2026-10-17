@@ -22,6 +22,7 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewAssetLoader
 import androidx.core.app.NotificationCompat
 import java.io.BufferedReader
 import java.net.HttpURLConnection
@@ -63,7 +64,17 @@ class PetService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 WebView.setWebContentsDebuggingEnabled(true)
             }
+            val assetLoader = WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this@PetService))
+                .build()
+
             webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView?, request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    request?.url?.let { return assetLoader.shouldInterceptRequest(it) }
+                    return null
+                }
                 override fun onPageFinished(view: WebView?, url: String?) {
                     android.util.Log.i("DshPet", "页面加载完成: " + url)
                 }
@@ -149,7 +160,7 @@ class PetService : Service() {
         }
 
         wm.addView(petView, lp)
-        petView.loadUrl("file:///android_asset/pet.html")
+        petView.loadUrl("https://appassets.androidplatform.net/assets/pet.html")
     }
 
     override fun onDestroy() {

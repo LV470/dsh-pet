@@ -45,4 +45,7 @@ dependencies {
     // 只用 appcompat：网络走 HttpURLConnection，异步走 Handler，
     // 少一个依赖就少一分首次构建失败的可能
     implementation("androidx.appcompat:appcompat:1.7.0")
+    // WebViewAssetLoader：把 file:// 资源映射成 https:// 域名，
+    // 否则 pixi-live2d-display 内部用 fetch 加载模型会静默失败
+    implementation("androidx.webkit:webkit:1.11.0")
 }
