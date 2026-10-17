@@ -8,11 +8,14 @@
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
             background:transparent;touch-action:none;
             -webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
-  #stage{position:absolute;inset:0;}
+  #stage{position:absolute;inset:0;overflow:hidden;}
+  /* canvas 必须显式设 CSS 尺寸：resolution=3.5 时 canvas 真实像素是
+     逻辑尺寸的 3.5 倍，不设 CSS 就会被撑大 3.5 倍、只露出左上角 */
+  #stage canvas{display:block;width:100% !important;height:100% !important;}
   /* DEBUG: 红框用来确认 WebView 真的在绘制。确认后删掉这一行 */
-  body{outline:3px solid rgba(255,40,40,.85);outline-offset:-3px;}
-  body::after{content:'PET-ALIVE';position:absolute;left:4px;top:4px;
-    font:12px monospace;color:#ff5555;background:rgba(0,0,0,.5);padding:1px 4px;}
+  body{outline:2px solid rgba(255,40,40,.6);outline-offset:-2px;}
+  body::after{content:'PET';position:absolute;right:4px;top:4px;z-index:9;
+    font:10px monospace;color:#ff7777;background:rgba(0,0,0,.4);padding:0 3px;}
   #bubble{position:absolute;left:6px;right:6px;bottom:6px;
           background:rgba(16,20,28,.88);color:#e9eefb;
           font:13px/1.45 sans-serif;
