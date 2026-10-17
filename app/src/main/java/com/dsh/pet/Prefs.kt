@@ -19,12 +19,13 @@ object Prefs {
 
     fun savePos(ctx: Context, x: Int, y: Int) {
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
-            .putString(KEY_POS, "$x,$y").apply()
+            .putString(KEY_POS, "$x,$y").commit()
     }
 
     fun saveSize(ctx: Context, w: Int, h: Int) {
+        // 用 commit() 同步写盘：apply() 是异步的，进程被杀时值会丢
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
-            .putInt(KEY_W, w).putInt(KEY_H, h).apply()
+            .putInt(KEY_W, w).putInt(KEY_H, h).commit()
     }
 
     fun loadSize(ctx: Context): Pair<Int, Int> {
@@ -34,7 +35,7 @@ object Prefs {
 
     fun saveAlpha(ctx: Context, a: Float) {
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
-            .putFloat(KEY_ALPHA, a).apply()
+            .putFloat(KEY_ALPHA, a).commit()
     }
 
     fun loadAlpha(ctx: Context): Float =

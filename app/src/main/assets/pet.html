@@ -351,22 +351,24 @@
     if (savedW > 0) { try { DshPet.setSize(savedW, savedH); } catch (e) {} savedW = 0; }
   }
 
-  // 拖动滑块：改窗口大小（高度按 5:3 比例跟随）
-  sizeR.addEventListener('input', function () {
+  // 拖动滑块：实时改大小；松手时再存一次（确保落盘）
+  function applySize() {
     var w = parseInt(sizeR.value, 10);
     sizeV.textContent = w;
-    var h = w;   // 模型是正方形，窗口也保持 1:1
-    try { DshPet.setSize(w, h); } catch (e) {}
-  });
+    try { DshPet.setSize(w, w); } catch (e) {}   // 1:1 正方形
+  }
+  sizeR.addEventListener('input', applySize);
+  sizeR.addEventListener('change', applySize);
 
-  // 拖动滑块：改透明度
-  alphaR.addEventListener('input', function () {
+  // 拖动滑块：实时改透明度；松手时再存一次
+  function applyAlpha() {
     var a = parseInt(alphaR.value, 10);
     alphaV.textContent = a + '%';
-    // 只改形象的透明度，菜单保持不透明
     document.getElementById('stage').style.opacity = (a / 100);
     try { DshPet.setAlpha(a / 100); } catch (e) {}
-  });
+  }
+  alphaR.addEventListener('input', applyAlpha);
+  alphaR.addEventListener('change', applyAlpha);
 
   document.getElementById('btnReact').onclick = function () { react(); };
 
