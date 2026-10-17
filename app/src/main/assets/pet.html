@@ -11,7 +11,8 @@
   #stage{position:absolute;inset:0;overflow:hidden;}
   /* canvas 必须显式设 CSS 尺寸：resolution=3.5 时 canvas 真实像素是
      逻辑尺寸的 3.5 倍，不设 CSS 就会被撑大 3.5 倍、只露出左上角 */
-  #stage canvas{display:block;width:100% !important;height:100% !important;}
+  #stage canvas{display:block;width:100% !important;height:100% !important;
+    background:rgba(0,110,255,.28) !important;}
   /* DEBUG: 红框用来确认 WebView 真的在绘制。确认后删掉这一行 */
   body{outline:2px solid rgba(255,40,40,.6);outline-offset:-2px;}
   body::after{content:'PET';position:absolute;right:4px;top:4px;z-index:9;
@@ -124,7 +125,7 @@
       backgroundAlpha: 0,
       antialias: true,
       autoStart: true,
-      resolution: window.devicePixelRatio || 1
+      resolution: 1
     });
     document.getElementById('stage').appendChild(app.view);
 
