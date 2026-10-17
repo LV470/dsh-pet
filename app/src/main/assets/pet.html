@@ -312,6 +312,7 @@
   function openMenu() {
     menuEl.classList.add('show');
     chatEl.classList.remove('show');
+    try { DshPet.setMenuOpen(true); } catch (e) {}
     try {
       var c = JSON.parse(DshPet.getConfig());
       sizeR.value = c.w;
@@ -325,13 +326,14 @@
   function closeMenu() {
     menuEl.classList.remove('show');
     if (typeof DshPet !== 'undefined' && DshPet.setFocusable) DshPet.setFocusable(false);
+    try { DshPet.setMenuOpen(false); } catch (e) {}
   }
 
   // 拖动滑块：改窗口大小（高度按 5:3 比例跟随）
   sizeR.addEventListener('input', function () {
     var w = parseInt(sizeR.value, 10);
     sizeV.textContent = w;
-    var h = Math.round(w * 5 / 3);
+    var h = w;   // 模型是正方形，窗口也保持 1:1
     try { DshPet.setSize(w, h); } catch (e) {}
   });
 
@@ -353,6 +355,7 @@
   document.getElementById('btnChat').onclick = function () {
     menuEl.classList.remove('show');
     chatEl.classList.add('show');
+    try { DshPet.setMenuOpen(true); } catch (e) {}
     // 需要输入框能拿焦点，否则键盘弹不出来
     try { DshPet.setFocusable(true); } catch (e) {}
     setTimeout(function () {
@@ -382,6 +385,7 @@
   function closeChat() {
     chatEl.classList.remove('show');
     try { DshPet.setFocusable(false); } catch (e) {}
+    try { DshPet.setMenuOpen(false); } catch (e) {}
   }
 
   var sending = false;

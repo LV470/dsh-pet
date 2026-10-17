@@ -42,6 +42,8 @@ class PetService : Service() {
     private var lastX = 0f
     private var lastY = 0f
     private var dragging = false
+    /** 菜单打开时，触摸要放行给 WebView，否则按钮点不动 */
+    private var menuOpen = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -130,6 +132,9 @@ class PetService : Service() {
         // 点击则回吐给页面里的 onPetClick()
         val slop = dp(6)
         petView.setOnTouchListener { _, ev ->
+            // 菜单/对话面板开着时，把触摸完全交给 WebView（否则按钮和滑块全废）
+            if (menuOpen) return@setOnTouchListener false
+
             when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     downX = ev.rawX; downY = ev.rawY
@@ -246,6 +251,12 @@ class PetService : Service() {
                 android.widget.Toast.makeText(this@PetService, msg,
                     android.widget.Toast.LENGTH_SHORT).show()
             }
+        }
+
+        /** 菜单开关状态：打开时 Android 层不再拦截触摸 */
+        @JavascriptInterface
+        fun setMenuOpen(open: Boolean) {
+            menuOpen = open
         }
 
         /** 对话：先走 DeepSeek API（DSH 有信任栅栏，接入放下一版） */

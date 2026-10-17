@@ -29,7 +29,7 @@ object Prefs {
 
     fun loadSize(ctx: Context): Pair<Int, Int> {
         val sp = ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-        return sp.getInt(KEY_W, 240) to sp.getInt(KEY_H, 400)
+        return sp.getInt(KEY_W, 240) to sp.getInt(KEY_H, 240)
     }
 
     fun saveAlpha(ctx: Context, a: Float) {
