@@ -125,7 +125,8 @@ class PetService : Service() {
             gravity = Gravity.TOP or Gravity.START
             x = px
             y = py
-            alpha = winAlpha
+            // 不再用 lp.alpha：它会让整个窗口（含菜单）一起透明
+            // 透明度改由页面内的 CSS 控制，只作用在形象上
         }
 
         // 拖动由服务端拦截（rawX/rawY 是屏幕绝对坐标，窗口移动时不会抖），
@@ -301,7 +302,8 @@ class PetService : Service() {
             val dm = resources.displayMetrics
             val wdp = (lp.width / dm.density).toInt()
             val hdp = (lp.height / dm.density).toInt()
-            return "{\"w\":" + wdp + ",\"h\":" + hdp + ",\"alpha\":" + lp.alpha + "}"
+            val a = Prefs.loadAlpha(this@PetService)
+            return "{\"w\":" + wdp + ",\"h\":" + hdp + ",\"alpha\":" + a + "}"
         }
 
         /** 调窗口大小，单位 dp */
@@ -316,15 +318,11 @@ class PetService : Service() {
             }
         }
 
-        /** 调透明度 0.2 ~ 1.0 */
+        /** 调透明度 0.2 ~ 1.0 —— 只影响形象，不影响菜单 */
         @JavascriptInterface
         fun setAlpha(a: Float) {
-            handler.post {
-                val v = if (a < 0.15f) 0.15f else if (a > 1f) 1f else a
-                lp.alpha = v
-                try { wm.updateViewLayout(petView, lp) } catch (_: Throwable) {}
-                Prefs.saveAlpha(this@PetService, v)
-            }
+            val v = if (a < 0.15f) 0.15f else if (a > 1f) 1f else a
+            Prefs.saveAlpha(this@PetService, v)
         }
 
         /** 需要输入文字时，临时让窗口可聚焦（否则键盘弹不出来） */

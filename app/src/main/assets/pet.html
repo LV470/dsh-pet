@@ -8,7 +8,7 @@
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
             background:transparent;touch-action:none;
             -webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
-  #stage{position:absolute;inset:0;overflow:hidden;}
+  #stage{position:absolute;inset:0;overflow:hidden;opacity:1;transition:opacity .15s;}
   /* canvas 必须显式设 CSS 尺寸：resolution=3.5 时 canvas 真实像素是
      逻辑尺寸的 3.5 倍，不设 CSS 就会被撑大 3.5 倍、只露出左上角 */
   #stage canvas{display:block;width:100% !important;height:100% !important;}
@@ -207,6 +207,13 @@
       } catch (e) { /* 挂不上就只播动作，其余功能不受影响 */ }
       layout();
       window.addEventListener('resize', layout);
+      try {
+        var cfgA = JSON.parse(DshPet.getConfig());
+        if (cfgA && cfgA.alpha) {
+          document.getElementById('stage').style.opacity = cfgA.alpha;
+          console.log('[SELFCHECK] applied alpha =', cfgA.alpha);
+        }
+      } catch (e) {}
       say('🐋 我在这儿~', 2200);
       setTimeout(function () { react(); }, 900);
     }).catch(function (e) {
@@ -353,6 +360,8 @@
   alphaR.addEventListener('input', function () {
     var a = parseInt(alphaR.value, 10);
     alphaV.textContent = a + '%';
+    // 只改形象的透明度，菜单保持不透明
+    document.getElementById('stage').style.opacity = (a / 100);
     try { DshPet.setAlpha(a / 100); } catch (e) {}
   });
 
