@@ -89,11 +89,21 @@
     }).catch(function (e) {
       console.error('[SELFCHECK] fetch FAILED:', e && e.message || e);
     });
+    // 关键：不要用 resizeTo: window —— 悬浮窗的 WebView 初始尺寸可能是 0x0，
+    // 那会让 renderer 创建不出来，之后读 .width 直接抛
+    // "Cannot read properties of undefined (reading 'width')"
+    var W = window.innerWidth || 240;
+    var H = window.innerHeight || 400;
+    if (W < 32) W = 240;
+    if (H < 32) H = 400;
+    console.log('[SELFCHECK] viewport =', W, 'x', H);
+
     app = new PIXI.Application({
+      width: W,
+      height: H,
       backgroundAlpha: 0,
       antialias: true,
       autoStart: true,
-      resizeTo: window,
       resolution: window.devicePixelRatio || 1
     });
     document.getElementById('stage').appendChild(app.view);
@@ -114,8 +124,10 @@
       console.log('[SELFCHECK] model loaded, w =', m.width, 'h =', m.height);
       return m;
     }).catch(function (e) {
-      console.error('[SELFCHECK] model load FAILED:', e && e.message || e);
-      say('模型加载失败：' + (e && e.message || e));
+      var msg = (e && e.message) || String(e);
+      var stack = (e && e.stack) ? String(e.stack).split('\n').slice(0, 3).join(' | ') : '';
+      console.error('[SELFCHECK] model load FAILED:', msg, stack);
+      say('模型加载失败：' + msg + (stack ? '\n' + stack : ''), 20000);
     });
   }
 
