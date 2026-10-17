@@ -9,7 +9,11 @@
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
             background:transparent;touch-action:none;
             -webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
-  #stage{position:absolute;inset:0;overflow:hidden;opacity:1;transition:opacity .15s;}
+  #stage{position:absolute;left:0;right:0;top:0;bottom:0;overflow:hidden;
+        opacity:1;transition:opacity .15s,height .18s ease;}
+  /* 菜单打开时：形象区域缩到上方 40%，菜单固定在下方 60%
+     —— 两者永不重叠，菜单上边框永远在形象下面 */
+  body.menu-open #stage{bottom:60%;}
   /* canvas 必须显式设 CSS 尺寸：resolution=3.5 时 canvas 真实像素是
      逻辑尺寸的 3.5 倍，不设 CSS 就会被撑大 3.5 倍、只露出左上角 */
   #stage canvas{display:block;width:100% !important;height:100% !important;}
@@ -135,7 +139,12 @@
 
   function layout() {
     if (!app || !model) return;
-    var w = app.renderer.width, h = app.renderer.height;
+    // 用 #stage 的真实尺寸：菜单打开时它上半区变小，模型要跟着缩
+    var st = document.getElementById('stage');
+    var w = st.clientWidth || app.renderer.width;
+    var h = st.clientHeight || app.renderer.height;
+    if (w < 8 || h < 8) { w = app.renderer.width; h = app.renderer.height; }
+    try { app.renderer.resize(w, h); } catch (e) {}
     // 关键：Live2DModel 是 PIXI Container，model.width 恒为 0
     // 必须读 internalModel 的尺寸（插件作者的注释里专门提醒过）
     var im = model.internalModel;
@@ -324,8 +333,10 @@
   var alphaV = document.getElementById('alphaV');
 
   function openMenu() {
-    // 不再临时放大窗口：那会把用户调好的尺寸也一起改掉
     menuEl.classList.add('show');
+    document.body.classList.add('menu-open');
+    // 等 CSS 过渡结束再重排模型，让她完整落在上半区
+    setTimeout(function () { try { layout(); } catch (e) {} }, 200);
     chatEl.classList.remove('show');
     try { DshPet.setMenuOpen(true); } catch (e) {}
     try {
@@ -340,9 +351,11 @@
 
   function closeMenu() {
     menuEl.classList.remove('show');
+    document.body.classList.remove('menu-open');
     if (typeof DshPet !== 'undefined' && DshPet.setFocusable) DshPet.setFocusable(false);
     try { DshPet.setMenuOpen(false); } catch (e) {}
     // 不恢复尺寸：用户拖成多大就是多大
+    setTimeout(function () { try { layout(); } catch (e) {} }, 200);
   }
 
   // 拖动滑块：实时改大小；松手时再存一次（确保落盘）
