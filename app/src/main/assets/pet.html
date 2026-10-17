@@ -306,12 +306,20 @@
   // ---------------- 菜单 ----------------
   var menuEl = document.getElementById('menu');
   var chatEl = document.getElementById('chat');
+  var savedW = 0, savedH = 0;   // 菜单打开前的窗口尺寸
   var sizeR = document.getElementById('sizeR');
   var alphaR = document.getElementById('alphaR');
   var sizeV = document.getElementById('sizeV');
   var alphaV = document.getElementById('alphaV');
 
   function openMenu() {
+    // 先把窗口临时放大，否则 240x240 装不下整套菜单
+    try {
+      var c0 = JSON.parse(DshPet.getConfig());
+      savedW = c0.w; savedH = c0.h;
+      if (c0.w < 300) DshPet.setSize(300, 400);
+    } catch (e) {}
+
     menuEl.classList.add('show');
     chatEl.classList.remove('show');
     try { DshPet.setMenuOpen(true); } catch (e) {}
@@ -329,6 +337,8 @@
     menuEl.classList.remove('show');
     if (typeof DshPet !== 'undefined' && DshPet.setFocusable) DshPet.setFocusable(false);
     try { DshPet.setMenuOpen(false); } catch (e) {}
+    // 恢复菜单打开前的尺寸
+    if (savedW > 0) { try { DshPet.setSize(savedW, savedH); } catch (e) {} savedW = 0; }
   }
 
   // 拖动滑块：改窗口大小（高度按 5:3 比例跟随）
