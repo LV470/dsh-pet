@@ -51,6 +51,8 @@
   #chat button{padding:7px 12px;border-radius:8px;
         border:1px solid rgba(110,160,255,.5);background:rgba(50,80,140,.9);
         color:#eaf1ff;font-size:12px;}
+  #chat #btnChatClose{background:rgba(120,50,60,.9);
+        border-color:rgba(255,120,130,.5);padding:7px 10px;}
 
   #bubble{position:absolute;left:6px;right:6px;bottom:6px;
           background:rgba(16,20,28,.88);color:#e9eefb;
@@ -85,6 +87,7 @@
   <div class="bar">
     <input id="chatInput" placeholder="跟我说点什么…">
     <button id="btnSend">发送</button>
+    <button id="btnChatClose" title="关闭">✕</button>
   </div>
 </div>
 <div id="bubble"></div>
@@ -434,9 +437,20 @@
     sending = false;
   }
 
+  document.getElementById('btnChatClose').onclick = function () {
+    closeChat();
+    // 关掉对话后彻底释放窗口，避免卡在"可聚焦"状态
+    try { DshPet.setMenuOpen(false); } catch (e) {}
+  };
+
   document.getElementById('btnSend').onclick = sendChat;
   chatInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') sendChat();
+  });
+
+  // 点对话面板外部的空白也能关掉（双保险）
+  chatEl.addEventListener('click', function (e) {
+    if (e.target === chatEl) closeChat();
   });
 
   // 调试用
