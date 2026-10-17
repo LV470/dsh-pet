@@ -137,10 +137,6 @@
       window.addEventListener('resize', layout);
       say('🐋 我在这儿~', 2200);
       setTimeout(function () { react(); }, 900);
-    }).then(function (m) {
-      var im = m.internalModel;
-      console.log('[SELFCHECK] model loaded, internal size =', im && im.width, 'x', im && im.height);
-      return m;
     }).catch(function (e) {
       var msg = (e && e.message) || String(e);
       var stack = (e && e.stack) ? String(e.stack).split('\n').slice(0, 3).join(' | ') : '';
