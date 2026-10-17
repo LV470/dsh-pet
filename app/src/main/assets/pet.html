@@ -79,6 +79,16 @@
       say('渲染库没加载起来');
       return;
     }
+
+    // ---- 自检 1：fetch 能不能读到模型 JSON（file:// 时代这里会静默失败）----
+    fetch('model/c_0120.model3.json').then(function (r) {
+      console.log('[SELFCHECK] fetch status =', r.status);
+      return r.text();
+    }).then(function (t) {
+      console.log('[SELFCHECK] fetch ok, bytes =', t.length);
+    }).catch(function (e) {
+      console.error('[SELFCHECK] fetch FAILED:', e && e.message || e);
+    });
     app = new PIXI.Application({
       backgroundAlpha: 0,
       antialias: true,
@@ -100,8 +110,12 @@
       window.addEventListener('resize', layout);
       say('🐋 我在这儿~', 2200);
       setTimeout(function () { react(); }, 900);
+    }).then(function (m) {
+      console.log('[SELFCHECK] model loaded, w =', m.width, 'h =', m.height);
+      return m;
     }).catch(function (e) {
-      say('模型加载失败：' + e);
+      console.error('[SELFCHECK] model load FAILED:', e && e.message || e);
+      say('模型加载失败：' + (e && e.message || e));
     });
   }
 
