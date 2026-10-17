@@ -42,6 +42,8 @@ class PetService : Service() {
     private var lastX = 0f
     private var lastY = 0f
     private var dragging = false
+    /** 按下时刻，用来区分单击和长按 */
+    private var downAt = 0L
     /** 菜单打开时，触摸要放行给 WebView，否则按钮点不动 */
     private var menuOpen = false
 
@@ -144,6 +146,7 @@ class PetService : Service() {
                     downX = ev.rawX; downY = ev.rawY
                     lastX = ev.rawX; lastY = ev.rawY
                     dragging = false
+                    downAt = System.currentTimeMillis()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -160,10 +163,17 @@ class PetService : Service() {
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val held = System.currentTimeMillis() - downAt
                     if (dragging) {
                         Prefs.savePos(this, lp.x, lp.y)
+                    } else if (held >= 500L) {
+                        // 长按 → 菜单
+                        petView.evaluateJavascript(
+                            "window.onPetLongPress&&onPetLongPress()", null)
                     } else {
-                        petView.evaluateJavascript("window.onPetClick&&onPetClick()", null)
+                        // 单击 → 互动
+                        petView.evaluateJavascript(
+                            "window.onPetClick&&onPetClick()", null)
                     }
                     dragging = false
                     true

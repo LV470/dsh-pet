@@ -11,9 +11,7 @@
             -webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
   #stage{position:absolute;left:0;right:0;top:0;bottom:0;overflow:hidden;
         opacity:1;transition:opacity .15s,height .18s ease;}
-  /* 菜单打开时：形象区域缩到上方 40%，菜单固定在下方 60%
-     —— 两者永不重叠，菜单上边框永远在形象下面 */
-  body.menu-open #stage{bottom:60%;}
+  /* 按用户要求：菜单打开时形象不缩小，保持原样 */
   /* canvas 必须显式设 CSS 尺寸：resolution=3.5 时 canvas 真实像素是
      逻辑尺寸的 3.5 倍，不设 CSS 就会被撑大 3.5 倍、只露出左上角 */
   #stage canvas{display:block;width:100% !important;height:100% !important;}
@@ -82,6 +80,7 @@
     <span class="val" id="alphaV">100%</span></div>
   <div class="btns">
     <button id="btnReact">互动</button>
+    <button id="btnBalance">余额</button>
     <button id="btnChat">对话</button>
     <button id="btnSet">设置</button>
     <button id="btnClose">✕</button>
@@ -390,6 +389,11 @@
 
   document.getElementById('btnReact').onclick = function () { react(); };
 
+  document.getElementById('btnBalance').onclick = function () {
+    refreshBalance(false);
+    setTimeout(function () { if (menuEl.classList.contains('show')) closeMenu(); }, 400);
+  };
+
   document.getElementById('btnSet').onclick = function () {
     if (DshPet.openSettings) DshPet.openSettings();
   };
@@ -407,9 +411,17 @@
     }, 120);
   };
 
-  // ---------------- 点击入口 ----------------
+  // ---------------- 手势入口 ----------------
+  // 单击 → 互动（做动作+换表情）
   window.onPetClick = function () {
     if (chatEl.classList.contains('show')) { closeChat(); return; }
+    if (menuEl.classList.contains('show')) { closeMenu(); return; }
+    react();
+  };
+
+  // 长按 → 唤出菜单
+  window.onPetLongPress = function () {
+    if (chatEl.classList.contains('show')) return;
     if (menuEl.classList.contains('show')) { closeMenu(); return; }
     openMenu();
   };
