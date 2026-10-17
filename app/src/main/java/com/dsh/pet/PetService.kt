@@ -15,7 +15,11 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.WindowManager
+import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.app.NotificationCompat
@@ -53,7 +57,38 @@ class PetService : Service() {
             settings.domStorageEnabled = true
             settings.allowFileAccess = true
             settings.mediaPlaybackRequiresUserGesture = false
-            webViewClient = WebViewClient()
+            // file:// 页面里再加载 file:// 的 js/模型，不加这两条会被拦
+            settings.allowFileAccessFromFileURLs = true
+            settings.allowUniversalAccessFromFileURLs = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                WebView.setWebContentsDebuggingEnabled(true)
+            }
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    android.util.Log.i("DshPet", "页面加载完成: " + url)
+                }
+                override fun onReceivedError(
+                    view: WebView?, request: WebResourceRequest?, error: WebResourceError?
+                ) {
+                    val msg = "资源加载失败: " + (error?.description ?: "?") + " @ " + (request?.url ?: "")
+                    android.util.Log.e("DshPet", msg)
+                    view?.post {
+                        view.loadUrl("javascript:window.__showError&&__showError(" + quoteJs(msg) + ")")
+                    }
+                }
+            }
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(m: ConsoleMessage?): Boolean {
+                    android.util.Log.i("DshPet",
+                        "console: " + (m?.message() ?: "") + " (" + (m?.lineNumber() ?: 0) + ")")
+                    m?.message()?.let { text ->
+                        if (text.contains("error", true) || text.contains("Uncaught", true)) {
+                            petView.post { petView.loadUrl("javascript:window.__showError&&__showError(" + quoteJs(text) + ")") }
+                        }
+                    }
+                    return true
+                }
+            }
             addJavascriptInterface(Bridge(), "DshPet")
         }
 
@@ -227,6 +262,15 @@ class PetService : Service() {
                 startActivity(i)
             }
         }
+    }
+
+    /** 把任意字符串安全塞进 JS 调用 */
+    private fun quoteJs(s: String): String {
+        val esc = s.replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", " ")
+            .replace("\r", " ")
+        return "\"" + esc + "\""
     }
 
     companion object {

@@ -40,6 +40,17 @@
     hideTimer = setTimeout(function () { bubble.classList.remove('show'); }, ms || 3500);
   }
 
+  // Android 侧会把 console/加载错误推到这里，直接显示出来
+  window.__showError = function (msg) { say('⚠️ ' + msg, 9000); };
+
+  // 未捕获的 JS 异常也显示出来（不然只能干瞪眼）
+  window.addEventListener('error', function (e) {
+    say('JS 错误: ' + (e.message || '?') + ' @' + (e.lineno || 0), 9000);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    say('Promise 失败: ' + (e.reason && e.reason.message || e.reason || '?'), 9000);
+  });
+
   var LINES = [
     '嗯？戳我干嘛~',
     '在的在的 🐋',
