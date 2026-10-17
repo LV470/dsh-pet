@@ -84,7 +84,10 @@ class PetService : Service() {
                 override fun onReceivedError(
                     view: WebView?, request: WebResourceRequest?, error: WebResourceError?
                 ) {
-                    val msg = "资源加载失败: " + (error?.description ?: "?") + " @ " + (request?.url ?: "")
+                    // favicon 缺失是无害噪音，别拿它刷屏
+                    val u = request?.url?.toString() ?: ""
+                    if (u.contains("favicon")) return
+                    val msg = "资源加载失败: " + (error?.description ?: "?") + " @ " + u
                     android.util.Log.e("DshPet", msg)
                     view?.post {
                         view.loadUrl("javascript:window.__showError&&__showError(" + quoteJs(msg) + ")")
