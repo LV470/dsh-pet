@@ -20,20 +20,20 @@
         font:12px/1.5 sans-serif;color:#e9eefb;pointer-events:none;}
   #menu.show{display:flex;}
   #menu .panel{pointer-events:auto;
-        background:rgba(12,16,24,.88);border-radius:12px;padding:7px;
+        background:rgba(12,16,24,.88);border-radius:10px;padding:5px;
         border:1px solid rgba(110,160,255,.4);
         box-shadow:0 6px 24px rgba(0,0,0,.45);
         max-height:100%;box-sizing:border-box;overflow-y:auto;
         -webkit-overflow-scrolling:touch;}
-  #menu .row{margin:3px 0;display:flex;align-items:center;gap:5px;}
-  #menu .row label{width:44px;flex:none;color:#9fb6dd;}
+  #menu .row{margin:2px 0;display:flex;align-items:center;gap:4px;}
+  #menu .row label{width:30px;flex:none;color:#9fb6dd;font-size:11px;}
   #menu input[type=range]{flex:1;height:18px;accent-color:#6aa8ff;}
-  #menu .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-  #menu .btns button{flex:1;min-width:58px;padding:6px 3px;border-radius:8px;
+  #menu .btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+  #menu .btns button{flex:1 1 0;min-width:0;padding:5px 2px;border-radius:7px;
         border:1px solid rgba(110,160,255,.45);background:rgba(40,60,100,.75);
-        color:#dfe8ff;font-size:12px;}
+        color:#dfe8ff;font-size:11px;}
   #menu .btns button:active{background:rgba(70,110,180,.9);}
-  #menu .val{width:44px;text-align:right;color:#7f96bb;font-size:11px;}
+  #menu .val{width:34px;text-align:right;color:#7f96bb;font-size:10px;}
 
   /* ---------- 对话面板 ---------- */
   #chat{position:absolute;left:6px;right:6px;bottom:6px;display:none;
@@ -79,7 +79,7 @@
     <button id="btnReact">互动</button>
     <button id="btnChat">对话</button>
     <button id="btnSet">设置</button>
-    <button id="btnClose">收起</button>
+    <button id="btnClose">✕</button>
   </div>
 </div></div>
 <div id="chat">
@@ -355,7 +355,18 @@
   function applySize() {
     var w = parseInt(sizeR.value, 10);
     sizeV.textContent = w;
-    try { DshPet.setSize(w, w); } catch (e) {}   // 1:1 正方形
+    try {
+      DshPet.setSize(w, w);   // 1:1 正方形
+      // 200ms 后回读，确认窗口真的改了
+      setTimeout(function () {
+        try {
+          var c = JSON.parse(DshPet.getConfig());
+          console.log('[SIZE] 请求', w, '实际', c.w, 'x', c.h);
+        } catch (e) {}
+      }, 220);
+    } catch (e) {
+      console.error('[SIZE] setSize 异常:', e);
+    }
   }
   sizeR.addEventListener('input', applySize);
   sizeR.addEventListener('change', applySize);

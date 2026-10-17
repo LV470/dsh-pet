@@ -311,9 +311,20 @@ class PetService : Service() {
         fun setSize(w: Int, h: Int) {
             handler.post {
                 val dm = resources.displayMetrics
-                lp.width = (w * dm.density).toInt()
-                lp.height = (h * dm.density).toInt()
-                try { wm.updateViewLayout(petView, lp) } catch (_: Throwable) {}
+                val nw = (w * dm.density).toInt()
+                val nh = (h * dm.density).toInt()
+                android.util.Log.i("DshPet", "setSize dp=" + w + "x" + h +
+                    " px=" + nw + "x" + nh + " (旧 " + lp.width + "x" + lp.height + ")")
+                lp.width = nw
+                lp.height = nh
+                val ok = try {
+                    wm.updateViewLayout(petView, lp); true
+                } catch (e: Exception) {
+                    android.util.Log.e("DshPet", "updateViewLayout 失败: " + e)
+                    false
+                }
+                android.util.Log.i("DshPet", "setSize 结果=" + ok +
+                    " 实际=" + lp.width + "x" + lp.height)
                 Prefs.saveSize(this@PetService, w, h)
             }
         }
