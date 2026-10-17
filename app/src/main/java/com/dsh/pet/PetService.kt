@@ -250,13 +250,22 @@ class PetService : Service() {
         fun openChat() {
             handler.post {
                 try {
-                    val i = packageManager.getLaunchIntentForPackage("com.deepseek.harness")
-                    if (i != null) {
-                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val pkg = "com.deepseek.harness"
+                    // 先试 launcher intent，拿不到就直接按组件名拉 MainActivity
+                    var i = packageManager.getLaunchIntentForPackage(pkg)
+                    if (i == null) {
+                        i = Intent().apply {
+                            setClassName(pkg, "com.deepseek.harness.MainActivity")
+                        }
+                    }
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                               Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                    try {
                         startActivity(i)
-                    } else {
+                    } catch (e: Exception) {
                         android.widget.Toast.makeText(this@PetService,
-                            "没找到 DSH 应用", android.widget.Toast.LENGTH_SHORT).show()
+                            "打不开 DSH：" + e.javaClass.simpleName,
+                            android.widget.Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     android.widget.Toast.makeText(this@PetService,
