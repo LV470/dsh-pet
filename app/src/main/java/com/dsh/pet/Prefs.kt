@@ -14,7 +14,7 @@ object Prefs {
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY_API, "") ?: ""
 
     fun setKey(ctx: Context, v: String) {
-        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putString(KEY_API, v).apply()
+        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putString(KEY_API, v).commit()
     }
 
     fun savePos(ctx: Context, x: Int, y: Int) {
