@@ -68,10 +68,17 @@
   function layout() {
     if (!app || !model) return;
     var w = app.renderer.width, h = app.renderer.height;
-    var s = Math.min(w / model.width, h / model.height);
+    // 关键：Live2DModel 是 PIXI Container，model.width 恒为 0
+    // 必须读 internalModel 的尺寸（插件作者的注释里专门提醒过）
+    var im = model.internalModel;
+    var mw = (im && im.width) || 0;
+    var mh = (im && im.height) || 0;
+    if (!mw || !mh) { console.warn('[SELFCHECK] internalModel 尺寸为 0:', mw, mh); return; }
+    var s = Math.min(w / mw, h / mh);
     model.scale.set(s);
-    model.x = (w - model.width * s) / 2;
-    model.y = h - model.height * s;
+    model.x = (w - mw * s) / 2;
+    model.y = h - mh * s;
+    console.log('[SELFCHECK] layout ok', mw, mh, 'scale', s.toFixed(3));
   }
 
   function boot() {
@@ -108,9 +115,19 @@
     });
     document.getElementById('stage').appendChild(app.view);
 
-    PIXI.live2d.Live2DModel.from('model/c_0120.model3.json').then(function (m) {
+    // 必须注册 Ticker，否则模型不会更新（画面永远空白）
+    var Live2DModel = PIXI.live2d.Live2DModel;
+    Live2DModel.registerTicker(PIXI.Ticker);
+
+    Live2DModel.from('model/c_0120.model3.json', {
+      autoInteract: false,
+      autoUpdate: true,
+      idleMotionGroup: 'idle'
+    }).then(function (m) {
       model = m;
+      model.eventMode = 'none';
       app.stage.addChild(model);
+      console.log('[SELFCHECK] model added to stage');
       // 取 coreModel 并挂 rig（与插件作者同一挂载点）
       try {
         coreModel = model.internalModel.coreModel;
@@ -121,7 +138,8 @@
       say('🐋 我在这儿~', 2200);
       setTimeout(function () { react(); }, 900);
     }).then(function (m) {
-      console.log('[SELFCHECK] model loaded, w =', m.width, 'h =', m.height);
+      var im = m.internalModel;
+      console.log('[SELFCHECK] model loaded, internal size =', im && im.width, 'x', im && im.height);
       return m;
     }).catch(function (e) {
       var msg = (e && e.message) || String(e);
