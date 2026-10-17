@@ -83,6 +83,12 @@
     model.x = (w - mw * s) / 2;
     model.y = h - mh * s;
     console.log('[SELFCHECK] layout ok', mw, mh, 'scale', s.toFixed(3));
+    console.log('[SELFCHECK] model pos=', model.x, model.y,
+                'alpha=', model.alpha, 'visible=', model.visible,
+                'children=', app.stage.children.length);
+    console.log('[SELFCHECK] canvas attr=', app.view.width, app.view.height,
+                'style=', app.view.style.width, app.view.style.height);
+    console.log('[SELFCHECK] renderer=', app.renderer.width, app.renderer.height);
   }
 
   function boot() {
@@ -130,6 +136,8 @@
     }).then(function (m) {
       model = m;
       model.eventMode = 'none';
+      model.alpha = 1;
+      console.log('[SELFCHECK] model raw scale=', model.scale.x, 'alpha=', model.alpha);
       app.stage.addChild(model);
       console.log('[SELFCHECK] model added to stage');
       // 取 coreModel 并挂 rig（与插件作者同一挂载点）
