@@ -111,8 +111,10 @@ class PetService : Service() {
             WindowManager.LayoutParams.TYPE_PHONE
 
         val (px, py) = Prefs.loadPos(this)
+        val (winW, winH) = Prefs.loadSize(this)
+        val winAlpha = Prefs.loadAlpha(this)
         lp = WindowManager.LayoutParams(
-            dp(240), dp(400), type,
+            dp(winW), dp(winH), type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
@@ -121,6 +123,7 @@ class PetService : Service() {
             gravity = Gravity.TOP or Gravity.START
             x = px
             y = py
+            alpha = winAlpha
         }
 
         // 拖动由服务端拦截（rawX/rawY 是屏幕绝对坐标，窗口移动时不会抖），
@@ -242,6 +245,89 @@ class PetService : Service() {
             handler.post {
                 android.widget.Toast.makeText(this@PetService, msg,
                     android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        /** 对话：先走 DeepSeek API（DSH 有信任栅栏，接入放下一版） */
+        @JavascriptInterface
+        fun ask(prompt: String): String {
+            val key = Prefs.getKey(this@PetService)
+            if (key.isBlank()) return "{\"error\":\"no_key\"}"
+            return try {
+                val conn = (URL("https://api.deepseek.com/chat/completions")
+                    .openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    doOutput = true
+                    setRequestProperty("Authorization", "Bearer " + key)
+                    setRequestProperty("Content-Type", "application/json")
+                    connectTimeout = 15000
+                    readTimeout = 45000
+                }
+                val body = "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"user\",\"content\":" +
+                        quoteJs(prompt) + "}],\"max_tokens\":300,\"temperature\":0.8}"
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+
+                val code = conn.responseCode
+                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                val text = if (stream == null) "" else
+                    BufferedReader(stream.reader()).use { it.readText() }
+                if (code !in 200..299) {
+                    "{\"error\":\"http_" + code + "\"}"
+                } else {
+                    val obj = org.json.JSONObject(text)
+                    val reply = obj.getJSONArray("choices").getJSONObject(0)
+                        .getJSONObject("message").getString("content")
+                    "{\"reply\":" + quoteJs(reply) + "}"
+                }
+            } catch (e: Exception) {
+                "{\"error\":\"" + e.javaClass.simpleName + "\"}"
+            }
+        }
+
+        /** 当前窗口配置（dp 尺寸 + 透明度） */
+        @JavascriptInterface
+        fun getConfig(): String {
+            val dm = resources.displayMetrics
+            val wdp = (lp.width / dm.density).toInt()
+            val hdp = (lp.height / dm.density).toInt()
+            return "{\"w\":" + wdp + ",\"h\":" + hdp + ",\"alpha\":" + lp.alpha + "}"
+        }
+
+        /** 调窗口大小，单位 dp */
+        @JavascriptInterface
+        fun setSize(w: Int, h: Int) {
+            handler.post {
+                val dm = resources.displayMetrics
+                lp.width = (w * dm.density).toInt()
+                lp.height = (h * dm.density).toInt()
+                try { wm.updateViewLayout(petView, lp) } catch (_: Throwable) {}
+                Prefs.saveSize(this@PetService, w, h)
+            }
+        }
+
+        /** 调透明度 0.2 ~ 1.0 */
+        @JavascriptInterface
+        fun setAlpha(a: Float) {
+            handler.post {
+                val v = if (a < 0.15f) 0.15f else if (a > 1f) 1f else a
+                lp.alpha = v
+                try { wm.updateViewLayout(petView, lp) } catch (_: Throwable) {}
+                Prefs.saveAlpha(this@PetService, v)
+            }
+        }
+
+        /** 需要输入文字时，临时让窗口可聚焦（否则键盘弹不出来） */
+        @JavascriptInterface
+        fun setFocusable(on: Boolean) {
+            handler.post {
+                lp.flags = if (on)
+                    lp.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+                else
+                    lp.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                try { wm.updateViewLayout(petView, lp) } catch (_: Throwable) {}
+                if (on) {
+                    petView.requestFocus()
+                }
             }
         }
 

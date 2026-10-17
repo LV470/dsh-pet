@@ -6,6 +6,9 @@ object Prefs {
     private const val FILE = "dsh_pet"
     private const val KEY_API = "deepseek_api_key"
     private const val KEY_POS = "pos"
+    private const val KEY_W = "win_w"
+    private const val KEY_H = "win_h"
+    private const val KEY_ALPHA = "win_alpha"
 
     fun getKey(ctx: Context): String =
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY_API, "") ?: ""
@@ -18,6 +21,24 @@ object Prefs {
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
             .putString(KEY_POS, "$x,$y").apply()
     }
+
+    fun saveSize(ctx: Context, w: Int, h: Int) {
+        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
+            .putInt(KEY_W, w).putInt(KEY_H, h).apply()
+    }
+
+    fun loadSize(ctx: Context): Pair<Int, Int> {
+        val sp = ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        return sp.getInt(KEY_W, 240) to sp.getInt(KEY_H, 400)
+    }
+
+    fun saveAlpha(ctx: Context, a: Float) {
+        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
+            .putFloat(KEY_ALPHA, a).apply()
+    }
+
+    fun loadAlpha(ctx: Context): Float =
+        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getFloat(KEY_ALPHA, 1f)
 
     fun loadPos(ctx: Context): Pair<Int, Int> {
         val s = ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY_POS, "") ?: ""

@@ -13,6 +13,40 @@
      逻辑尺寸的 3.5 倍，不设 CSS 就会被撑大 3.5 倍、只露出左上角 */
   #stage canvas{display:block;width:100% !important;height:100% !important;}
   /* 调试标记已移除 */
+  /* ---------- 点击菜单 ---------- */
+  #menu{position:absolute;inset:0;display:none;flex-direction:column;
+        justify-content:center;padding:10px;box-sizing:border-box;
+        background:rgba(12,16,24,.93);border-radius:14px;
+        border:1px solid rgba(110,160,255,.35);z-index:20;
+        font:12px/1.5 sans-serif;color:#e9eefb;}
+  #menu.show{display:flex;}
+  #menu .row{margin:5px 0;display:flex;align-items:center;gap:6px;}
+  #menu .row label{width:44px;flex:none;color:#9fb6dd;}
+  #menu input[type=range]{flex:1;height:18px;accent-color:#6aa8ff;}
+  #menu .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  #menu .btns button{flex:1;min-width:64px;padding:7px 4px;border-radius:9px;
+        border:1px solid rgba(110,160,255,.45);background:rgba(40,60,100,.75);
+        color:#dfe8ff;font-size:12px;}
+  #menu .btns button:active{background:rgba(70,110,180,.9);}
+  #menu .val{width:44px;text-align:right;color:#7f96bb;font-size:11px;}
+
+  /* ---------- 对话面板 ---------- */
+  #chat{position:absolute;left:6px;right:6px;bottom:6px;display:none;
+        background:rgba(12,16,24,.95);border-radius:12px;padding:8px;
+        border:1px solid rgba(110,160,255,.4);z-index:30;}
+  #chat.show{display:block;}
+  #chat .log{max-height:120px;overflow-y:auto;margin-bottom:6px;
+        font:12px/1.45 sans-serif;color:#dfe8ff;white-space:pre-wrap;}
+  #chat .log .me{color:#8fd0ff;}
+  #chat .log .ai{color:#b8f0c8;}
+  #chat .bar{display:flex;gap:6px;}
+  #chat input{flex:1;min-width:0;padding:7px 9px;border-radius:8px;
+        border:1px solid rgba(110,160,255,.45);background:rgba(30,42,66,.9);
+        color:#eaf1ff;font-size:12px;outline:none;}
+  #chat button{padding:7px 12px;border-radius:8px;
+        border:1px solid rgba(110,160,255,.5);background:rgba(50,80,140,.9);
+        color:#eaf1ff;font-size:12px;}
+
   #bubble{position:absolute;left:6px;right:6px;bottom:6px;
           background:rgba(16,20,28,.88);color:#e9eefb;
           font:13px/1.45 sans-serif;
@@ -27,6 +61,27 @@
 </head>
 <body>
 <div id="stage"></div>
+<div id="menu">
+  <div class="row"><label>大小</label>
+    <input type="range" id="sizeR" min="120" max="520" step="10">
+    <span class="val" id="sizeV">240</span></div>
+  <div class="row"><label>透明</label>
+    <input type="range" id="alphaR" min="20" max="100" step="5">
+    <span class="val" id="alphaV">100%</span></div>
+  <div class="btns">
+    <button id="btnReact">互动</button>
+    <button id="btnChat">对话</button>
+    <button id="btnSet">设置</button>
+    <button id="btnClose">收起</button>
+  </div>
+</div>
+<div id="chat">
+  <div class="log" id="chatLog"></div>
+  <div class="bar">
+    <input id="chatInput" placeholder="跟我说点什么…">
+    <button id="btnSend">发送</button>
+  </div>
+</div>
 <div id="bubble"></div>
 <script src="expressions.js"></script>
 <script src="vendor/pixi.min.js"></script>
@@ -243,31 +298,118 @@
     say('💰 余额 ¥' + total + '\n赠送 ¥' + grant + ' · 充值 ¥' + top, 6000);
   }
 
-  // 单击=查余额 / 双击=打开 DSH 对话 / 三连击=打开设置
-  var clicks = 0, clickTimer = null;
-  window.onPetClick = function () {
-    clicks++;
-    clearTimeout(clickTimer);
-    clickTimer = setTimeout(function () {
-      var n = clicks; clicks = 0;
-      if (n >= 3) {
-        if (typeof DshPet !== 'undefined' && DshPet.openSettings) {
-          say('打开设置…', 1500);
-          DshPet.openSettings();
-        }
-      } else if (n === 2) {
-        if (typeof DshPet !== 'undefined' && DshPet.openChat) {
-          say('打开 DSH…', 1200);
-          DshPet.openChat();
-        } else {
-          say(pick(LINES));
-        }
-      } else {
-        react();
-        refreshBalance(false);
-      }
-    }, 280);
+  // ---------------- 菜单 ----------------
+  var menuEl = document.getElementById('menu');
+  var chatEl = document.getElementById('chat');
+  var sizeR = document.getElementById('sizeR');
+  var alphaR = document.getElementById('alphaR');
+  var sizeV = document.getElementById('sizeV');
+  var alphaV = document.getElementById('alphaV');
+
+  function openMenu() {
+    menuEl.classList.add('show');
+    chatEl.classList.remove('show');
+    try {
+      var c = JSON.parse(DshPet.getConfig());
+      sizeR.value = c.w;
+      sizeV.textContent = c.w;
+      var a = Math.round((c.alpha || 1) * 100);
+      alphaR.value = a;
+      alphaV.textContent = a + '%';
+    } catch (e) {}
+  }
+
+  function closeMenu() {
+    menuEl.classList.remove('show');
+    if (typeof DshPet !== 'undefined' && DshPet.setFocusable) DshPet.setFocusable(false);
+  }
+
+  // 拖动滑块：改窗口大小（高度按 5:3 比例跟随）
+  sizeR.addEventListener('input', function () {
+    var w = parseInt(sizeR.value, 10);
+    sizeV.textContent = w;
+    var h = Math.round(w * 5 / 3);
+    try { DshPet.setSize(w, h); } catch (e) {}
+  });
+
+  // 拖动滑块：改透明度
+  alphaR.addEventListener('input', function () {
+    var a = parseInt(alphaR.value, 10);
+    alphaV.textContent = a + '%';
+    try { DshPet.setAlpha(a / 100); } catch (e) {}
+  });
+
+  document.getElementById('btnReact').onclick = function () { react(); };
+
+  document.getElementById('btnSet').onclick = function () {
+    if (DshPet.openSettings) DshPet.openSettings();
   };
+
+  document.getElementById('btnClose').onclick = function () { closeMenu(); };
+
+  document.getElementById('btnChat').onclick = function () {
+    menuEl.classList.remove('show');
+    chatEl.classList.add('show');
+    // 需要输入框能拿焦点，否则键盘弹不出来
+    try { DshPet.setFocusable(true); } catch (e) {}
+    setTimeout(function () {
+      try { document.getElementById('chatInput').focus(); } catch (e) {}
+    }, 120);
+  };
+
+  // ---------------- 点击入口 ----------------
+  window.onPetClick = function () {
+    if (chatEl.classList.contains('show')) { closeChat(); return; }
+    if (menuEl.classList.contains('show')) { closeMenu(); return; }
+    openMenu();
+  };
+
+  // ---------------- 对话（先接 DeepSeek API，后续换 DSH）----------------
+  var chatLog = document.getElementById('chatLog');
+  var chatInput = document.getElementById('chatInput');
+
+  function logLine(cls, text) {
+    var d = document.createElement('div');
+    d.className = cls;
+    d.textContent = text;
+    chatLog.appendChild(d);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function closeChat() {
+    chatEl.classList.remove('show');
+    try { DshPet.setFocusable(false); } catch (e) {}
+  }
+
+  var sending = false;
+  function sendChat() {
+    var text = (chatInput.value || '').trim();
+    if (!text || sending) return;
+    logLine('me', '我：' + text);
+    chatInput.value = '';
+    sending = true;
+    logLine('ai', '鲸鱼娘：…');
+    var last = chatLog.lastChild;
+    var raw = '';
+    try {
+      raw = DshPet.ask(text);
+    } catch (e) {
+      raw = '调用失败：' + e;
+    }
+    var d = null;
+    try { d = JSON.parse(raw); } catch (e) {}
+    if (d && d.reply) {
+      last.textContent = '鲸鱼娘：' + d.reply;
+    } else {
+      last.textContent = '鲸鱼娘：' + (d && d.error ? '（' + d.error + '）' : raw);
+    }
+    sending = false;
+  }
+
+  document.getElementById('btnSend').onclick = sendChat;
+  chatInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') sendChat();
+  });
 
   // 调试用
   window.refreshBalance = refreshBalance;
